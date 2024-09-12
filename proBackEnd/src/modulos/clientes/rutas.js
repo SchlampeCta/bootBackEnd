@@ -77,4 +77,47 @@ router.delete('/eliminar/:id', async function (req, res, next) {
    }
 });
 
+// Ruta para el login
+router.post('/login', async (req, res) => {
+   const { correo, contraseña } = req.body;
+
+   if (!correo || !contraseña) {
+      return res.status(400).send('Correo y contraseña son requeridos');
+   }
+
+   try {
+      const usuario = await db.obtenerUsuarioPorCorreo(correo); 
+
+      if (!usuario) {
+         return res.status(401).send('Correo no encontrado');
+      }
+
+      const esCoincidente = await db.verificarContraseña(correo, contraseña); 
+
+      if (esCoincidente) {
+         res.status(200).json({ mensaje: 'Login exitoso' });
+      } else {
+         res.status(401).send('Contraseña incorrecta');
+      }
+   } catch (error) {
+      res.status(500).send('Error del servidor');
+   }
+});
+
+// Ruta para insertar datos de animes
+router.post('/addAnime', async function (req, res, next) {
+   try {
+      const item = await controlador.agregarAnime(req.body);
+      const mensaje = req.body.id === 0 ? 'Anime guardado con éxito' : 'Anime actualizado con éxito';
+
+      
+      const statusCode = req.body.id === 0 ? 201 : 200;
+
+      respuesta.success(req, res, { item, mensaje }, statusCode);
+   } catch (err) {
+      next(err);
+   }
+});
+
+
 module.exports = router;

@@ -1,4 +1,4 @@
-const app = require('./app'); // Asegúrate de que la ruta es correcta
+const app = require('./app'); 
 const config = require('./config');
 
 // Inicia el servidor

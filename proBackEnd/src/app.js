@@ -2,12 +2,16 @@ const express = require('express');
 const morgan = require('morgan');
 const config = require('./config');
 
+const cors = require('cors');
+
 
 const clientes = require('./modulos/clientes/rutas');
 const error = require('./red/error');
 
 const app = express();
 
+// Configuración de CORS
+app.use(cors());
 
 // Configuración de middleware
 app.use(morgan('dev'));

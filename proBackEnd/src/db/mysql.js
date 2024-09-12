@@ -41,7 +41,7 @@ function conMysql() {
 // Llamar a la conexión
 conMysql();
 
-// Función para traer todos los datos de la tabla
+// Función para traer todos los datos de la tabla de usuarios
 function todos(tabla) {
     return new Promise((resolve, reject) => {
         if (!/^[a-zA-Z0-9_]+$/.test(tabla)) {
@@ -56,7 +56,7 @@ function todos(tabla) {
     });
 }
 
-// Función para traer un solo dato de la tabla
+// Función para traer un solo dato de la tabla de usuario
 function uno(tabla, ID) {
     return new Promise((resolve, reject) => {
         conexion.query(`SELECT * FROM ?? WHERE ID = ?`, [tabla, ID], (error, result) => {
@@ -66,7 +66,7 @@ function uno(tabla, ID) {
     });
 }
 
-
+//Funcion para agregar los datos de usuarios
 // Función para agregar datos (insertar o actualizar)
 async function agregar(tabla, data) {
     return new Promise(async (resolve, reject) => {
@@ -81,23 +81,29 @@ async function agregar(tabla, data) {
                 return reject(new Error("Datos de inserción no válidos"));
             }
 
-            // Encriptar la contraseña si existe
+            // Verificar si las contraseñas coinciden
+            if (data.password === data.confContraseña) {
+                return reject(new Error("Las contraseñas no coinciden"));
+            }
+
+            // Encriptar la contraseña 
             if (data.password) {
                 try {
                     const hashedPassword = await bcrypt.hash(data.password, saltRounds);
-                    data.password = hashedPassword;
+                    data.password = hashedPassword; 
+                    delete data.confContraseña; 
                 } catch (error) {
                     return reject(new Error("Error al cifrar la contraseña"));
                 }
             }
 
-            // Extraer columnas y valores
+            
             const columns = Object.keys(data);
             const values = Object.values(data);
             const placeholders = columns.map(() => '?').join(', ');
             const sql = `INSERT INTO ?? (${columns.join(', ')}) VALUES (${placeholders})`;
 
-            // Ejecutar la consulta SQL
+           
             conexion.query(sql, [tabla, ...values], (error, result) => {
                 if (error) {
                     return reject(error);
@@ -110,8 +116,7 @@ async function agregar(tabla, data) {
     });
 }
 
-
-// Función para actualizar datos
+// Función para actualizar datos de usuarios
 async function actualizar(id, data) {
     try {
         if (!/^\d+$/.test(id)) {
@@ -122,7 +127,7 @@ async function actualizar(id, data) {
         if (data.password) {
             data.password = await bcrypt.hash(data.password, saltRounds);
         }
-        // Llamar la función de actualización de la base de datos
+        
         return await db.actualizar(id, data);
     } catch (error) {
         throw error;
@@ -139,35 +144,35 @@ function agregar(tabla, data) {
     }
 }
 */
-// Función para eliminar datos ESTO FUE LO ULTIMO QUE CAMBIE 
+// Función para eliminar por ID datos usuario
 function eliminar(tabla, id) {
     return new Promise((resolve, reject) => {
-        // Asegurarse de que el ID es válido
+       
         if (!id || isNaN(parseInt(id))) {
             return reject(new Error('ID no válido'));
         }
 
-        // Consulta para eliminar el registro por ID
+        
         conexion.query(`DELETE FROM ?? WHERE ID = ?`, [tabla, id], (error, result) => {
             if (error) {
                 return reject(error);
             }
 
-            // Verificar si se eliminó algún registro
+           
             if (result.affectedRows === 0) {
                 return reject(new Error('No se encontró el registro para eliminar.'));
             }
 
-            // Resolver la promesa si el registro fue eliminado con éxito
+          
             resolve('Registro eliminado con éxito.');
         });
     });
 }
 
-// Función para verificar la contraseña
+// Función para verificar la contraseña usuarios 
 async function verificarContraseña(correo, contraseña) {
     return new Promise((resolve, reject) => {
-        // Primero, obtén el hash de la contraseña desde la base de datos
+        
         const sql = 'SELECT contraseña FROM usuarios WHERE correo = ?';
         conexion.query(sql, [correo], async (error, results) => {
             if (error) {
@@ -175,26 +180,111 @@ async function verificarContraseña(correo, contraseña) {
             }
 
             if (results.length === 0) {
+                alert('Usuario no encontrado');
                 return reject(new Error('Usuario no encontrado'));
             }
 
             const hashedPassword = results[0].contraseña;
 
-            // Luego, compara la contraseña ingresada con el hash almacenado
+            // Comparar la contraseña ingresada con el hash almacenado
             try {
                 const esCoincidente = await bcrypt.compare(contraseña, hashedPassword);
                 if (esCoincidente) {
                     resolve(true);
                 } else {
+                    alert('Contraseña incorrecta'); 
                     reject(new Error('Contraseña incorrecta'));
                 }
             } catch (error) {
+                alert('Error al verificar la contraseña'); 
                 reject(new Error('Error al verificar la contraseña'));
             }
         });
     });
 }
 
+// Función para obtener un usuario por correo
+function obtenerUsuarioPorCorreo(correo) {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT * FROM usuarios WHERE correo = ?';
+        conexion.query(sql, [correo], (error, results) => {
+            if (error) return reject(error);
+            resolve(results[0]); 
+        });
+    });
+}
+
+//funcion para insertar animes 
+async function addAnime(data) {
+    return new Promise((resolve, reject) => {
+        try {
+            // Verificar datos
+            const requiredFields = ['nombre_JP', 'nombre_In', 'nombre_Es', 'descripcion', 'genero', 'subgenero'];
+            for (const field of requiredFields) {
+                if (!data[field] || data[field].trim() === '') {
+                    return reject(new Error(`El campo ${field} es obligatorio`));
+                }
+            }
+
+            // Construir la consulta SQL
+            const columns = Object.keys(data);
+            const values = Object.values(data);
+            const placeholders = columns.map(() => '?').join(', ');
+            const sql = `INSERT INTO registro_anime (${columns.join(', ')}) VALUES (${placeholders})`;
+
+            // Ejecutar la consulta
+            conexion.query(sql, values, (error, result) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(result);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+// Función para insertar animes
+async function addAnime(tabla, data) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Verificar nombre de la tabla
+            if (!/^[a-zA-Z0-9_]+$/.test(tabla)) {
+                return reject(new Error("Nombre de tabla no válido"));
+            }
+
+            // Verificar datos
+            if (typeof data !== 'object' || Object.keys(data).length === 0) {
+                return reject(new Error("Datos de inserción no válidos"));
+            }
+
+            // Verificar que los campos requeridos no estén vacíos
+            const requiredFields = ['nombre_Jp', 'nombre_In', 'nombre_Es', 'descripcion', 'genero', 'subgenero'];
+            for (let field of requiredFields) {
+                if (!data[field]) {
+                    return reject(new Error(`El campo ${field} es obligatorio desde mysql`));
+                }
+            }
+
+            // Preparar la consulta SQL
+            const columns = Object.keys(data);
+            const values = Object.values(data);
+            const placeholders = columns.map(() => '?').join(', ');
+            const sql = `INSERT INTO ?? (${columns.join(', ')}) VALUES (${placeholders})`;
+
+            // Ejecutar la consulta
+            conexion.query(sql, [tabla, ...values], (error, result) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(result);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
 
 
 // Exportar las funciones
@@ -204,5 +294,7 @@ module.exports = {
     uno,
     eliminar,
     actualizar,
-    verificarContraseña
+    verificarContraseña,
+    obtenerUsuarioPorCorreo,
+    addAnime
 };
