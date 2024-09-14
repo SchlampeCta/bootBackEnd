@@ -105,8 +105,6 @@ async function enviarDatosFormularioAnime() {
             console.log('Anime registrado con éxito:', result);
             alert('Anime registrado con éxito');
             resetFormulario();
-            // Redirigir a otra página
-            //window.location.href = '/home/usuario/mi-primer-anime/index.html'; //POSIBLE CAMBIO
         } else {
             const error = await response.text();
             console.error('Error al registrar el anime:', error);
