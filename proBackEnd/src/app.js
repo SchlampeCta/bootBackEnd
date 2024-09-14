@@ -11,7 +11,10 @@ const error = require('./red/error');
 const app = express();
 
 // Configuración de CORS
-app.use(cors());
+app.use(cors({
+    origin: 'https://mi-primer-anime.netlify.app'
+}));
+
 
 // Configuración de middleware
 app.use(morgan('dev'));
